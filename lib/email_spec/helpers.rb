@@ -21,9 +21,9 @@ module EmailSpec
       visit request_uri(url)
     end
 
-    def click_first_link_in_email(email = current_email)
+    def click_first_link_in_email(email = current_email, opts={})
       link = links_in_email(email).first
-      visit request_uri(link)
+      visit request_uri(link, opts)
     end
 
     def open_email(address, opts={})
@@ -116,10 +116,12 @@ module EmailSpec
       url
     end
 
-    def request_uri(link)
+    def request_uri(link, opts={})
       return unless link
       url = URI::parse(link)
-      url.fragment ? (url.request_uri + "#" + url.fragment) : url.request_uri
+      # url.fragment ? (url.request_uri + "#" + url.fragment) : url.request_uri
+      path = url.fragment ? (url.request_uri + "#" + url.fragment) : url.request_uri
+      opts[:absolute] ? url.to_s : path
     end
 
     # e.g. confirm in http://confirm
