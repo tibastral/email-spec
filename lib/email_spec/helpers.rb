@@ -105,12 +105,12 @@ module EmailSpec
       email_spec_hash[:current_email] = email
     end
 
-    def parse_email_for_link(email, text_or_regex)
+    def parse_email_for_link(email, text_or_regex, opts={})
       matcher = EmailSpec::Matchers::HaveBodyText.new(text_or_regex)
       RSpec::Expectations::PositiveExpectationHandler.handle_matcher(email, matcher)
 
-      url = parse_email_for_explicit_link(email, text_or_regex)
-      url ||= parse_email_for_anchor_text_link(email, text_or_regex)
+      url = parse_email_for_explicit_link(email, text_or_regex, opts)
+      url ||= parse_email_for_anchor_text_link(email, text_or_regex, opts)
 
       raise "No link found matching #{text_or_regex.inspect} in #{email}" unless url
       url
@@ -123,16 +123,22 @@ module EmailSpec
     end
 
     # e.g. confirm in http://confirm
-    def parse_email_for_explicit_link(email, regex)
+    def parse_email_for_explicit_link(email, regex, opts={})
       regex = /#{Regexp.escape(regex)}/ unless regex.is_a?(Regexp)
       url = links_in_email(email).detect { |link| link =~ regex }
       request_uri(url)
     end
 
     # e.g. Click here in  <a href="http://confirm">Click here</a>
-    def parse_email_for_anchor_text_link(email, link_text)
+    def parse_email_for_anchor_text_link(email, link_text, opts={})
       if textify_images(email.default_part_body) =~ %r{<a[^>]*href=['"]?([^'"]*)['"]?[^>]*?>[^<]*?#{link_text}[^<]*?</a>}
-        URI.split($1)[5..-1].compact!.join("?").gsub("&amp;", "&")
+        # URI.split($1)[5..-1].compact!.join("?").gsub("&amp;", "&")
+
+
+        url = $1.to_s
+        path = URI.split($1)[5..-1].compact!.join("?").gsub("&amp;", "&")
+        opts[:absolute] ? url : path
+
         # sub correct ampersand after rails switches it (http://dev.rubyonrails.org/ticket/4002)
       else
         return nil

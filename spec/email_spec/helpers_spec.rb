@@ -15,6 +15,21 @@ describe EmailSpec::Helpers do
       parse_email_for_link(email, "Click Here").should == "/path/to/page"
     end
 
+    it "properly finds full url links with text" do
+      email = Mail.new(:body =>  %(<a href="http://host.com/path/to/page">Click Here</a>))
+      parse_email_for_link(email, "Click Here", :absolute => true).should == "http://host.com/path/to/page"
+    end
+
+    it "recognizes full url img alt properties as text" do
+      email = Mail.new(:body => %(<a href="http://host.com/path/to/page"><img src="http://host.com/images/image.gif" alt="an image" /></a>))
+      parse_email_for_link(email, "an image", :absolute => true).should == "http://host.com/path/to/page"
+    end
+
+    it "properly finds explicit links with text" do
+      email = Mail.new(:body =>  %(http://host.com/path/to/page))
+      parse_email_for_link(email, "path/to").should == "/path/to/page"
+    end
+
     it "recognizes img alt properties as text" do
       email = Mail.new(:body => %(<a href="/path/to/page"><img src="http://host.com/images/image.gif" alt="an image" /></a>))
       parse_email_for_link(email, "an image").should == "/path/to/page"
@@ -247,7 +262,7 @@ describe EmailSpec::Helpers do
 
       it "includes a warning that no mailboxes were searched when no address was provided" do
         subject.stub(:last_email_address).and_return nil
-        expect { open_email(nil, :with_subject => "baz") }.to raise_error(EmailSpec::NoEmailAddressProvided) { |error| error.message.should == "No email address has been provided. Make sure current_email_address is returning something." }        
+        expect { open_email(nil, :with_subject => "baz") }.to raise_error(EmailSpec::NoEmailAddressProvided) { |error| error.message.should == "No email address has been provided. Make sure current_email_address is returning something." }
       end
 
       describe "search by with_subject" do
